@@ -4,17 +4,26 @@ const PROGRESS_RADIUS_WIDTH = 100
 
 // Requesting the video file:
 var req = new XMLHttpRequest()
-req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/6/6c/%22Movbild-fizika%22_falo_en_Big_Buck_Bunny.webm", true)
+// req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/6/6c/%22Movbild-fizika%22_falo_en_Big_Buck_Bunny.webm", true)
+req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/1/18/Big_Buck_Bunny_Trailer_1080p.ogv", true)
 req.responseType = 'blob'
 
 req.onload = function() {
    if (this.status === 200) {
       var videoBlob = this.response
       var vid = URL.createObjectURL(videoBlob)
-      document.getElementById('video').src = vid
+      const canvas = document.getElementById('canvas')
+      const container = document.getElementById('container')
+      const video = document.getElementById('video')
+      video.src = vid
 
      // Success!
      _drawProgress(100)
+     canvas.className += "popping-out"
+     container.className += "video-ready"
+     video.className += "video-ready"
+
+     // setTimeout(() => video.play(), 1500)
    }
 }
 
