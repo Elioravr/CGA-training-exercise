@@ -3,34 +3,38 @@ const PROGRESS_CANVAS_HEIGHT = 300
 const PROGRESS_RADIUS_WIDTH = 100
 
 // Requesting the video file:
-var req = new XMLHttpRequest()
-// req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/6/6c/%22Movbild-fizika%22_falo_en_Big_Buck_Bunny.webm", true)
-req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/1/18/Big_Buck_Bunny_Trailer_1080p.ogv", true)
+const req = new XMLHttpRequest()
+req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/6/6c/%22Movbild-fizika%22_falo_en_Big_Buck_Bunny.webm", true)
+// req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/1/18/Big_Buck_Bunny_Trailer_1080p.ogv", true)
+// req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/d/d9/Jet_d%27eau_de_Gen%C3%A8ve_%282018%29.webm", true)
+// req.open('GET', "http://upload.wikimedia.org/wikipedia/commons/7/79/Big_Buck_Bunny_small.ogv", true)
 req.responseType = 'blob'
 
 req.onload = function() {
-   if (this.status === 200) {
-      var videoBlob = this.response
-      var vid = URL.createObjectURL(videoBlob)
-      const canvas = document.getElementById('canvas')
-      const container = document.getElementById('container')
-      const video = document.getElementById('video')
-      video.src = vid
+  if (this.status === 200) {
+    const videoBlob = this.response
+    const vid = URL.createObjectURL(videoBlob)
+    const progressCanvas = document.getElementById('canvas-progress')
+    const container = document.getElementById('container')
+    const video = document.getElementById('video')
+    const videoCanvas = document.getElementById('canvas-video')
+    video.src = vid
 
-     // Success!
-     _drawProgress(100)
-     canvas.className += "popping-out"
-     container.className += "video-ready"
-     video.className += "video-ready"
+    // Success!
+    _drawProgress(100)
+    progressCanvas.className += "popping-out"
+    container.className += "video-ready"
+    videoCanvas.className += "video-ready"
 
-     // setTimeout(() => video.play(), 1500)
-   }
+    video.addEventListener('play', _handleVideoPlay)
+
+    video.play()
+  }
 }
 
 req.addEventListener("progress", ({loaded, total}) => {
   const percentages = Math.round(loaded / total * 100)
 
-  /* console.log(`loaded: ${Math.round(percentages)}`) */
   _drawProgress(percentages)
 })
 
@@ -47,12 +51,36 @@ const _drawProgress = (percentages) => {
   _drawCircle(startAngle, endAngle, `${percentages}%`)
 }
 
+const _handleVideoPlay = () => {
+  const video = document.getElementById('video')
+  const videoCanvas = document.getElementById('canvas-video')
+  let videoCtx
+
+  if (videoCanvas.getContext) {
+    videoCtx = videoCanvas.getContext('2d')
+  }
+
+  video.addEventListener('loadedmetadata', () => {
+    videoCanvas.height = video.videoHeight
+    videoCanvas.width = video.videoWidth
+  })
+
+  if (!video.paused && !video.ended) {
+    _drawVideoCurrentFrame(video, videoCtx)
+    setInterval(() => _drawVideoCurrentFrame(video, videoCtx), 1000 / 30)
+  }
+}
+
+const _drawVideoCurrentFrame = (video, ctx) => {
+  ctx.drawImage(video, 0, 0)
+}
+
 const _drawCircle = (startAngle, endAngle, text) => {
-  const canvas = document.getElementById('canvas')
-  canvas.width = PROGRESS_CANVAS_WIDTH
-  canvas.height = PROGRESS_CANVAS_HEIGHT
-  if (canvas.getContext) {
-    const ctx = canvas.getContext('2d')
+  const progressCanvas = document.getElementById('canvas-progress')
+  progressCanvas.width = PROGRESS_CANVAS_WIDTH
+  progressCanvas.height = PROGRESS_CANVAS_HEIGHT
+  if (progressCanvas.getContext) {
+    const ctx = progressCanvas.getContext('2d')
     const x = PROGRESS_CANVAS_WIDTH / 2
     const y = PROGRESS_CANVAS_HEIGHT / 2
 

@@ -17,11 +17,15 @@ html, body, #container {
   background-color: rgb(255, 255, 255);
 }
 
-#canvas.popping-out {
+#canvas-progress.popping-out {
   animation: pop-out 1s ease-in-out forwards;
 }
 
 #video {
+  display: none;
+}
+
+#canvas-video {
   position: absolute;
   top: 10;
   bottom: 10;
@@ -31,7 +35,7 @@ html, body, #container {
   transition: opacity 0.6s 1.5s ease-in-out;
 }
 
-#video.video-ready {
+#canvas-video.video-ready {
   opacity: 1;
 }
 
