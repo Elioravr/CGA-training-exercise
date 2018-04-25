@@ -1,24 +1,36 @@
 const PROGRESS_CANVAS_WIDTH = 300
 const PROGRESS_CANVAS_HEIGHT = 300
 const PROGRESS_RADIUS_WIDTH = 100
+const FRAMES_PER_SECOND = 30
 
 let video
 let progressCanvas
 let videoCanvas
+let frameUpdaterInterval
+let videoHeight
+let videoWidth
+let videoCanvasHeight
+let windowWidth
+let videoCanvasWidth
 
 document.addEventListener('DOMContentLoaded', () => {
   video = document.getElementById('video')
   progressCanvas = document.getElementById('canvas-progress')
   videoCanvas = document.getElementById('canvas-video')
-}, false);
 
+  windowWidth = document.body.clientWidth
+  videoCanvasWidth = windowWidth * 0.9
+
+  videoCanvas.addEventListener('click', _handleVideoClick)
+  video.addEventListener('loadedmetadata', _handleVideoLoadMetadata)
+}, false);
 
 // Requesting the video file:
 const req = new XMLHttpRequest()
-req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/6/6c/%22Movbild-fizika%22_falo_en_Big_Buck_Bunny.webm", true)
-// req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/1/18/Big_Buck_Bunny_Trailer_1080p.ogv", true)
-// req.open('GET', "https://upload.wikimedia.org/wikipedia/commons/d/d9/Jet_d%27eau_de_Gen%C3%A8ve_%282018%29.webm", true)
-// req.open('GET', "http://upload.wikimedia.org/wikipedia/commons/7/79/Big_Buck_Bunny_small.ogv", true)
+req.open('GET', 'https://upload.wikimedia.org/wikipedia/commons/6/6c/%22Movbild-fizika%22_falo_en_Big_Buck_Bunny.webm', true)
+// req.open('GET', 'https://upload.wikimedia.org/wikipedia/commons/1/18/Big_Buck_Bunny_Trailer_1080p.ogv', true)
+// req.open('GET', 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Jet_d%27eau_de_Gen%C3%A8ve_%282018%29.webm', true)
+// req.open('GET', 'http://upload.wikimedia.org/wikipedia/commons/7/79/Big_Buck_Bunny_small.ogv', true)
 req.responseType = 'blob'
 
 req.onload = function() {
@@ -30,17 +42,18 @@ req.onload = function() {
 
     // Success!
     _drawProgress(100)
-    progressCanvas.className += "popping-out"
-    container.className += "video-ready"
-    videoCanvas.className += "video-ready"
+    progressCanvas.className += 'popping-out'
+    container.className += 'video-ready'
+    videoCanvas.className += 'video-ready'
 
     video.addEventListener('play', _handleVideoPlay)
 
-    video.play()
+    // Waiting for the opening animation to over
+    setTimeout(() => video.play(), 1500)
   }
 }
 
-req.addEventListener("progress", ({loaded, total}) => {
+req.addEventListener('progress', ({loaded, total}) => {
   const percentages = Math.round(loaded / total * 100)
 
   _drawProgress(percentages)
@@ -59,6 +72,23 @@ const _drawProgress = (percentages) => {
   _drawCircle(startAngle, endAngle, `${percentages}%`)
 }
 
+const _handleVideoLoadMetadata = () => {
+  videoHeight = video.videoHeight
+  videoWidth = video.videoWidth
+  videoCanvasHeight = videoCanvasWidth * (videoHeight / videoWidth)
+  videoCanvas.width = videoCanvasWidth
+  videoCanvas.height = videoCanvasHeight
+}
+
+const _handleVideoClick = () => {
+  if (video.paused) {
+    video.play()
+  } else {
+    video.pause()
+    clearInterval(frameUpdaterInterval)
+  }
+}
+
 const _handleVideoPlay = () => {
   let videoCtx
 
@@ -66,27 +96,15 @@ const _handleVideoPlay = () => {
     videoCtx = videoCanvas.getContext('2d')
   }
 
-  let videoHeight
-  let videoWidth
-  let videoCanvasHeight
   const windowWidth = document.body.clientWidth
   const videoCanvasWidth = windowWidth * 0.9
 
-  video.addEventListener('loadedmetadata', () => {
-    videoHeight = video.videoHeight
-    videoWidth = video.videoWidth
-    videoCanvasHeight = videoCanvasWidth * (videoHeight / videoWidth)
-    videoCanvas.width = videoCanvasWidth
-    videoCanvas.height = videoCanvasHeight
-  })
-
-
   if (!video.paused && !video.ended) {
-    setInterval(() => _drawVideoCurrentFrame(video, videoCtx, videoCanvasHeight, videoCanvasWidth), 1000 / 30)
+    frameUpdaterInterval = setInterval(() => _drawVideoCurrentFrame(videoCtx, videoCanvasHeight, videoCanvasWidth), 1000 / FRAMES_PER_SECOND)
   }
 }
 
-const _drawVideoCurrentFrame = (video, ctx, height, width) => {
+const _drawVideoCurrentFrame = (ctx, height, width) => {
   ctx.drawImage(video, 0, 0, width, height)
 }
 
@@ -108,8 +126,8 @@ const _drawCircle = (startAngle, endAngle, text) => {
     ctx.fillStyle = 'white'
     ctx.stroke()
     ctx.font = '48px serif'
-    ctx.textAlign="center"
-    ctx.textBaseline="middle"
+    ctx.textAlign='center'
+    ctx.textBaseline='middle'
     ctx.fillText(text, x, y)
   }
 }
