@@ -14,6 +14,7 @@ let videoWidth
 let videoCanvasHeight
 let windowWidth
 let videoCanvasWidth
+let videoCanvasBoundingRect
 
 document.addEventListener('DOMContentLoaded', () => {
   video = document.getElementById('video')
@@ -102,9 +103,27 @@ const _showIcon = (iconName, x, y) => {
     icon.setAttribute('style', 'display: none')
   })
 
+  // Calculating icon position
+  const {
+    top: videoCanvasTop,
+    left: videoCanvasLeft,
+    width: videoCanvasWidth,
+    height: videoCanvasHeight
+  } = videoCanvasBoundingRect
+
+  let iconTop = y - ICONS_SHOW_OFFSET
+  let iconLeft = x - ICONS_SHOW_OFFSET
+
+  // Checking if the top/left are breaking the 'walls' of the canvas
+  iconTop = iconTop < videoCanvasTop ? iconTop + ICONS_SHOW_OFFSET : iconTop
+  iconTop = iconTop + ICON_SIZE > videoCanvasTop + videoCanvasHeight ? iconTop - ICONS_SHOW_OFFSET : iconTop
+
+  iconLeft = iconLeft < videoCanvasLeft ? iconLeft + ICONS_SHOW_OFFSET : iconLeft
+  iconLeft = iconLeft + ICON_SIZE > videoCanvasLeft + videoCanvasWidth ? iconLeft - ICONS_SHOW_OFFSET : iconLeft
+
   // Show only the requested icon
   const icon = document.getElementById(`${iconName}-icon`)
-  icon.setAttribute('style', `display: block; top: ${y - ICONS_SHOW_OFFSET}px; left: ${x - ICONS_SHOW_OFFSET}px`)
+  icon.setAttribute('style', `display: block; top: ${iconTop}px; left: ${iconLeft}px`)
 }
 
 const _handleVideoPlay = () => {
@@ -124,6 +143,10 @@ const _handleVideoPlay = () => {
 
 const _drawVideoCurrentFrame = (ctx, height, width) => {
   ctx.drawImage(video, 0, 0, width, height)
+
+  if (!videoCanvasBoundingRect) {
+    videoCanvasBoundingRect = videoCanvas.getBoundingClientRect()
+  }
 }
 
 const _drawCircle = (startAngle, endAngle, text) => {
