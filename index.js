@@ -8,6 +8,7 @@ const ICONS_SHOW_OFFSET = ICON_SIZE / 2
 let video
 let progressCanvas
 let videoCanvas
+let videoCanvasCtx
 let frameUpdaterInterval
 let videoHeight
 let videoWidth
@@ -26,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   videoCanvas.addEventListener('click', _handleVideoClick)
   video.addEventListener('loadedmetadata', _handleVideoLoadMetadata)
+
+  videoCanvasCtx = videoCanvas.getContext('2d')
 }, false);
 
 // Requesting the video file:
@@ -92,8 +95,51 @@ const _handleVideoClick = ({clientX, clientY}) => {
     video.pause()
     iconName = 'pause'
     clearInterval(frameUpdaterInterval)
+    videoCanvasCtx.clearRect(0, 0, videoCanvasWidth, videoHeight);
   }
   _showIcon(iconName, clientX, clientY)
+  _animatePause(clientX, clientY)
+}
+
+_animatePause = (clientX, clientY) => {
+  videoCanvasCtx.save()
+  videoCanvasCtx.beginPath()
+
+  // Draw the left triangle
+  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
+  videoCanvasCtx.lineTo(0, 0)
+  videoCanvasCtx.lineTo(0, videoCanvasBoundingRect.height)
+  videoCanvasCtx.clip()
+
+  // Draw the top triangle
+  videoCanvasCtx.restore()
+  videoCanvasCtx.save()
+
+  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
+  videoCanvasCtx.lineTo(0, 0)
+  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, 0)
+  videoCanvasCtx.clip()
+
+  // Draw the bottom triangle
+  videoCanvasCtx.restore()
+  videoCanvasCtx.save()
+
+  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
+  videoCanvasCtx.lineTo(0, videoCanvasBoundingRect.height)
+  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, videoCanvasBoundingRect.height)
+  videoCanvasCtx.clip()
+
+  // Draw the right triangle
+  videoCanvasCtx.restore()
+  videoCanvasCtx.save()
+
+  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
+  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, 0)
+  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, videoCanvasBoundingRect.height)
+  videoCanvasCtx.clip()
+
+  videoCanvasCtx.drawImage(video, 0, 0, videoCanvasWidth, videoHeight)
+  videoCanvasCtx.restore()
 }
 
 const _showIcon = (iconName, x, y) => {
@@ -127,17 +173,11 @@ const _showIcon = (iconName, x, y) => {
 }
 
 const _handleVideoPlay = () => {
-  let videoCtx
-
-  if (videoCanvas.getContext) {
-    videoCtx = videoCanvas.getContext('2d')
-  }
-
   const windowWidth = document.body.clientWidth
   const videoCanvasWidth = windowWidth * 0.9
 
   if (!video.paused && !video.ended) {
-    frameUpdaterInterval = setInterval(() => _drawVideoCurrentFrame(videoCtx, videoCanvasHeight, videoCanvasWidth), 1000 / FRAMES_PER_SECOND)
+    frameUpdaterInterval = setInterval(() => _drawVideoCurrentFrame(videoCanvasCtx, videoCanvasHeight, videoCanvasWidth), 1000 / FRAMES_PER_SECOND)
   }
 }
 
