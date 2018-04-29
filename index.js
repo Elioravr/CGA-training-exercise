@@ -2,6 +2,8 @@ const PROGRESS_CANVAS_WIDTH = 300
 const PROGRESS_CANVAS_HEIGHT = 300
 const PROGRESS_RADIUS_WIDTH = 100
 const FRAMES_PER_SECOND = 30
+const ICON_SIZE = 100
+const ICONS_SHOW_OFFSET = ICON_SIZE / 2
 
 let video
 let progressCanvas
@@ -80,13 +82,29 @@ const _handleVideoLoadMetadata = () => {
   videoCanvas.height = videoCanvasHeight
 }
 
-const _handleVideoClick = () => {
+const _handleVideoClick = ({clientX, clientY}) => {
+  let iconName
   if (video.paused) {
     video.play()
+    iconName = 'play'
   } else {
     video.pause()
+    iconName = 'pause'
     clearInterval(frameUpdaterInterval)
   }
+  _showIcon(iconName, clientX, clientY)
+}
+
+const _showIcon = (iconName, x, y) => {
+  // Hide all icons
+  const icons = document.querySelectorAll('.icon')
+  icons.forEach((icon) => {
+    icon.setAttribute('style', 'display: none')
+  })
+
+  // Show only the requested icon
+  const icon = document.getElementById(`${iconName}-icon`)
+  icon.setAttribute('style', `display: block; top: ${y - ICONS_SHOW_OFFSET}px; left: ${x - ICONS_SHOW_OFFSET}px`)
 }
 
 const _handleVideoPlay = () => {

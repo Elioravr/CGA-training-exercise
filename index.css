@@ -39,6 +39,13 @@ html, body, #container {
   opacity: 1;
 }
 
+.icon {
+  display: none;
+  position: absolute;
+  width: 100px;
+  height: 100px;
+}
+
 @keyframes pop-out {
   0% {
     transform: translateY(0px) rotate(0deg);
