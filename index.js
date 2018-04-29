@@ -4,6 +4,7 @@ const PROGRESS_RADIUS_WIDTH = 100
 const FRAMES_PER_SECOND = 30
 const ICON_SIZE = 100
 const ICONS_SHOW_OFFSET = ICON_SIZE / 2
+const PAUSE_PLAY_SCALE_ANIMATION_DELTA = 0.02
 
 let video
 let progressCanvas
@@ -16,11 +17,14 @@ let videoCanvasHeight
 let windowWidth
 let videoCanvasWidth
 let videoCanvasBoundingRect
+let videoPauseFrameImage
+let currentScale = 1
 
 document.addEventListener('DOMContentLoaded', () => {
   video = document.getElementById('video')
   progressCanvas = document.getElementById('canvas-progress')
   videoCanvas = document.getElementById('canvas-video')
+  videoPauseFrameImage = document.getElementById('video-pause-frame')
 
   windowWidth = document.body.clientWidth
   videoCanvasWidth = windowWidth * 0.9
@@ -94,51 +98,72 @@ const _handleVideoClick = ({clientX, clientY}) => {
   } else {
     video.pause()
     iconName = 'pause'
+
+    const dataURL = videoCanvas.toDataURL()
+    videoPauseFrameImage.src = dataURL
+
     clearInterval(frameUpdaterInterval)
     videoCanvasCtx.clearRect(0, 0, videoCanvasWidth, videoHeight);
   }
   _showIcon(iconName, clientX, clientY)
+
+
   _animatePause(clientX, clientY)
 }
 
 _animatePause = (clientX, clientY) => {
+  videoCanvasCtx.clearRect(0, 0, videoCanvasWidth, videoHeight)
+  currentScale -= PAUSE_PLAY_SCALE_ANIMATION_DELTA
+
+  // Draw the left triangle
+  _drawPolygon(clientX, clientY, [[0, 0], [0, videoCanvasHeight]])
+
+  // Draw the top triangle
+  _drawPolygon(clientX, clientY, [[0, 0], [videoCanvasWidth, 0]], {isVertical: true})
+
+  // Draw the bottom triangle
+  _drawPolygon(clientX, clientY, [
+    [0, videoCanvasHeight],
+    [videoCanvasWidth, videoCanvasHeight]
+  ], {isVertical: true, isNegativeDirection: true})
+
+  // Draw the right triangle
+  _drawPolygon(clientX, clientY, [
+    [videoCanvasWidth, 0],
+    [videoCanvasWidth, videoCanvasHeight]
+  ], {isNegativeDirection: true})
+
+  if (currentScale > 0) {
+    window.requestAnimationFrame(() => _animatePause(clientX, clientY))
+  }
+}
+
+const _drawPolygon = (clientX, clientY, points, {isVertical=false, isNegativeDirection=false}={}) => {
+  const [p1, p2] = points
+
   videoCanvasCtx.save()
   videoCanvasCtx.beginPath()
 
+  if (isNegativeDirection) {
+    const translateX = isVertical ? 0 : (1 - currentScale) * videoCanvasWidth
+    const translateY = isVertical ? (1 - currentScale) * videoCanvasHeight : 0
+
+    videoCanvasCtx.translate(translateX, translateY)
+  }
+
   // Draw the left triangle
+  videoCanvasCtx.scale(isVertical ? 1 : currentScale, isVertical ? currentScale : 1)
+
+  // Move to the user click position
   videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
-  videoCanvasCtx.lineTo(0, 0)
-  videoCanvasCtx.lineTo(0, videoCanvasBoundingRect.height)
+
+  // Draw
+  videoCanvasCtx.lineTo(...p1)
+  videoCanvasCtx.lineTo(...p2)
+  videoCanvasCtx.closePath()
   videoCanvasCtx.clip()
+  videoCanvasCtx.drawImage(videoPauseFrameImage, 0, 0, videoCanvasWidth, videoCanvasHeight)
 
-  // Draw the top triangle
-  videoCanvasCtx.restore()
-  videoCanvasCtx.save()
-
-  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
-  videoCanvasCtx.lineTo(0, 0)
-  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, 0)
-  videoCanvasCtx.clip()
-
-  // Draw the bottom triangle
-  videoCanvasCtx.restore()
-  videoCanvasCtx.save()
-
-  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
-  videoCanvasCtx.lineTo(0, videoCanvasBoundingRect.height)
-  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, videoCanvasBoundingRect.height)
-  videoCanvasCtx.clip()
-
-  // Draw the right triangle
-  videoCanvasCtx.restore()
-  videoCanvasCtx.save()
-
-  videoCanvasCtx.moveTo(clientX - videoCanvasBoundingRect.left, clientY - videoCanvasBoundingRect.top)
-  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, 0)
-  videoCanvasCtx.lineTo(videoCanvasBoundingRect.width, videoCanvasBoundingRect.height)
-  videoCanvasCtx.clip()
-
-  videoCanvasCtx.drawImage(video, 0, 0, videoCanvasWidth, videoHeight)
   videoCanvasCtx.restore()
 }
 

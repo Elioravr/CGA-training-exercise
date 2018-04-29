@@ -21,7 +21,7 @@ html, body, #container {
   animation: pop-out 1s ease-in-out forwards;
 }
 
-#video {
+#video, #video-pause-frame {
   display: none;
 }
 
